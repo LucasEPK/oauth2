@@ -11,6 +11,11 @@ app.get('/', (req, res) => {
   res.send('Hello World!')
 })
 
+app.get('/discord', (req, res) => {
+  console.log(req.query.code)
+  res.send(req.query.code)
+})
+
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
   console.log(process.env.PORT)
