@@ -5,6 +5,7 @@ const port = process.env.PORT
 const cors = require('cors')
 const { request } = require('undici');
 
+let data
 // Enables cors, this is makes the backend work with nginx frontend
 app.use(cors());
 
@@ -14,10 +15,9 @@ app.get('/', (req, res) => {
 
 // This is called from the discord redirect url
 app.get('/discord', async ({ query }, res) => {
-
+  
   // Here we get access code
   const { code } = query;
-
   let userResult
   
   // Here we get access token and request user data
@@ -54,9 +54,14 @@ app.get('/discord', async ({ query }, res) => {
     }
   }
   
-  const data = await userResult.body.json()
+  data = await userResult.body.json()
   await console.log(data['username']);
-  await res.send(data)
+  await res.redirect("http://localhost:3000")
+})
+
+app.get('/discord_data', async(req, res) => {
+  await console.log(data)
+  await res.json(data)
 })
 
 app.listen(port, () => {
