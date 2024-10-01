@@ -5,7 +5,6 @@ const port = process.env.PORT
 const cors = require('cors')
 const { request } = require('undici');
 
-let data
 // Enables cors, this is makes the backend work with nginx frontend
 app.use(cors());
 
@@ -18,7 +17,13 @@ app.get('/discord', async ({ query }, res) => {
   
   // Here we get access code
   const { code } = query;
-  let userResult
+
+  res.redirect("http://localhost:3000/?code=" + code)
+})
+
+app.get('/access-token', async ({ query }, res) => {
+  // Here we get access code
+  const { code } = query;
   
   // Here we get access token and request user data
   if (code) {
@@ -42,26 +47,42 @@ app.get('/discord', async ({ query }, res) => {
       const oauthData = await tokenResponseData.body.json();
       console.log(oauthData)
 
-      // Requesting user data
-      userResult = await request('https://discord.com/api/users/@me', {
-        headers: {
-          authorization: `${oauthData.token_type} ${oauthData.access_token}`,
-        },
-      });
+      const accessToken = `${oauthData.token_type} ${oauthData.access_token}`;
+      console.log(accessToken)
+
+      return res.status(200).json({ access_token: accessToken });
     } catch (error) {
       // NOTE: An unauthorized token will not throw an error
       console.error(error);
+      return res.status(500).json({})
     }
   }
-  
-  data = await userResult.body.json()
-  await console.log(data['username']);
-  await res.redirect("http://localhost:3000")
 })
 
 app.get('/discord_data', async(req, res) => {
-  await console.log(data)
-  await res.json(data)
+  // Getting the access token from the cookie
+  const accessToken = req.headers.authorization;
+  console.log("Access token: ", accessToken)
+
+  if (!accessToken) {
+    return res.status(401).json({})
+  }
+
+  try {
+    // Requesting user data
+    const userResult = await request('https://discord.com/api/users/@me', {
+      headers: {
+        authorization: accessToken,
+      },
+    });
+    const data = await userResult.body.json()
+    console.log(data['username'])
+
+    return res.status(200).json(data)
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({})
+  }
 })
 
 app.listen(port, () => {
